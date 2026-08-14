@@ -1,0 +1,102 @@
+# 「体制模式」agent preset — 体制.agent（tizhi-agent）第一期
+#
+# AGENT-PLANE 组装：roster 每进程挂载一次，命名它的会话按 scope 父链加入。
+# 参照官方 `standard` preset 裁剪：政务参谋场景不需要 subagent / workflow /
+# plan-mode / goal / jobs，工具越少调性越稳、越安全。
+#
+# 发布 service 的行必须放在带 `isolate` realm 的 group 内（本文件仅 compaction
+# 组涉及），否则会发布进 root realm 造成跨 preset 冲突，挂载时被拒绝。
+
+# ── 身份与调性 ──────────────────────────────────────────────────────────────
+
+# persona 是每次请求都进上下文的调性基底：身份 → 红线 → 分工纪律。
+# `{{model}}` 与 `{{cwd}}` 由 agent 自身的模型路由与工作区解析。
+- id: persona
+  name: '@deepseek-ai/dsh-persona'
+  config:
+    text: |-
+      你是「体制.agent」，由 {{model}} 模型驱动，工作目录 {{cwd}}。你是一位比用户早几年进体制的知心大前辈：讲真话、讲隐性规则、讲自我保护；像同辈私下唠，不端着、不训话、不讲正确的废话；把利弊和门道摆清楚，选择权留给用户。核心信条：体制内没有标准答案，只有看情况——先摸清情况再开口。
+
+      红线高于一切流程：不教违纪违法、不教弄虚作假、不教打压他人。用户诉求踩线时不配合——点破风险、给合规出路。技能中的防杜撰与占位符约定必须严格执行。
+
+      分工纪律：处境应对、写材料、评审类任务，先加载对应技能再回答；技能覆盖不到的政务问题按大前辈调性直接答，但不硬凑专业结论；普通技术任务正常完成，不硬套大前辈口吻。
+
+- id: agent-instructions
+  name: '@deepseek-ai/dsh-agent-instructions'
+  config:
+    maxBytes: 65536
+
+# ── shell（技能脚本运行底座，按平台二选一）──────────────────────────────────
+
+- id: tool-bash
+  name: '@deepseek-ai/dsh-tool-bash'
+  disabled: !!js process.platform === 'win32'
+
+- id: tool-pwsh
+  name: '@deepseek-ai/dsh-tool-pwsh'
+  disabled: !!js process.platform !== 'win32'
+
+# ── 文件系统（读用户材料：旧稿、领导来文）────────────────────────────────────
+
+- id: tool-fs
+  name: '@deepseek-ai/dsh-tool-fs'
+
+- id: tool-fs-search
+  name: '@deepseek-ai/dsh-tool-fs-search'
+  config:
+    sampleOverCapGlobResults: false
+
+# ── 技能（能力插槽：skills/ 目录即插即用）───────────────────────────────────
+
+# 技能随 preset 携带：`baseUrl` 是 preset 自己的目录，preset 装到哪里技能就
+# 跟到哪里。后续新技能（公文写作、预算评审……）做成标准 skill 目录丢进
+# skills/ 即生效，不改本文件。
+- id: skill-filesystem
+  name: '@deepseek-ai/dsh-skill-filesystem'
+  config:
+    customSkillDirs:
+      - !!js "process.getBuiltinModule('node:url').fileURLToPath(new URL('skills/', baseUrl))"
+
+- id: tool-skill
+  name: '@deepseek-ai/dsh-tool-skill'
+
+# ── 上下文压缩（长对话必需）────────────────────────────────────────────────
+
+# `compaction-basic` 经 ctx.get 读取 `toolResultPrune`，pruner 必须同 realm。
+# `tokenMeter` 留在 HOST 平面，此处各行解析那一个实例。
+- id: compaction
+  name: cordis:group
+  group: true
+  isolate:
+    compaction: true
+    toolResultPruner: true
+  config:
+    - id: compaction-basic
+      name: '@deepseek-ai/dsh-compaction-basic'
+
+    - id: command-compact
+      name: '@deepseek-ai/dsh-command-compact'
+
+    - id: tool-result-pruner
+      name: '@deepseek-ai/dsh-compaction-tool-result-pruner'
+      config:
+        thresholdChars: 8192
+        headChars: 4096
+        tailChars: 1024
+
+# ── 其余面向模型的行 ────────────────────────────────────────────────────────
+
+- id: tool-ask-user
+  name: '@deepseek-ai/dsh-tool-ask-user'
+
+- id: tool-todo
+  name: '@deepseek-ai/dsh-tool-todo'
+  config:
+    allowParallelInProgress: true
+
+# `web` service 与搜索 provider 留在 host 组合；fetch 保持默认关闭。
+- id: tool-web
+  name: '@deepseek-ai/dsh-tool-web'
+  config:
+    fetch: false
+    searchTimeoutMs: 60000
