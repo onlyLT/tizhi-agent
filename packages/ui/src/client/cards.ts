@@ -47,3 +47,11 @@ export const SITUATION_CARDS: readonly SituationCard[] = [
 
 /** 「体制模式」preset 的 roster id（目录名）。 */
 export const PRESET_ID = 'tizhi'
+
+/** cards 路由返回行的运行时校验（wire 边界）。 */
+export function isSituationCard(row: unknown): row is SituationCard {
+  if (typeof row !== 'object' || row === null) return false
+  const record = row as Record<string, unknown>
+  return ['key', 'title', 'hint', 'template']
+    .every(field => typeof record[field] === 'string' && record[field] !== '')
+}

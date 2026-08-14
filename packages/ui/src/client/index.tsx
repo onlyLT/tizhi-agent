@@ -6,7 +6,7 @@
  * 4. settings.general.item 注册皮肤开关行。
  */
 import { createSnapshotStore } from '@deepseek-ai/dsh-client-runtime/client'
-import { PRESET_ID } from './cards.ts'
+import { PRESET_ID, SITUATION_CARDS, isSituationCard, type SituationCard } from './cards.ts'
 import { BrandPanel } from './panel.tsx'
 import { SkinRow } from './skin-row.tsx'
 import { SKIN_SOURCE, SKIN_TOKENS } from './skin.ts'
@@ -36,6 +36,12 @@ export function apply(ctx: TizhiCtx): void {
   let disposeSkin: (() => void) | undefined
   const reconcileSkin = (): void => {
     const { enabled } = skinStore.getSnapshot()
+    // 品牌替换 CSS 以 body[data-tizhi-skin] 为总闸，与 token 叠层同开同关。
+    if (enabled) {
+      document.body.dataset.tizhiSkin = ''
+    } else {
+      delete document.body.dataset.tizhiSkin
+    }
     if (enabled && disposeSkin === undefined) {
       disposeSkin = ctx.theme.overrideTokens(SKIN_SOURCE, SKIN_TOKENS)
     } else if (!enabled && disposeSkin !== undefined) {
@@ -48,6 +54,7 @@ export function apply(ctx: TizhiCtx): void {
     reconcileSkin()
     return () => {
       stop()
+      delete document.body.dataset.tizhiSkin
       if (disposeSkin !== undefined) {
         disposeSkin()
         disposeSkin = undefined
@@ -69,6 +76,20 @@ export function apply(ctx: TizhiCtx): void {
     return probe
   }
 
+  // 卡片跟着 preset 走：node 半边从 preset 目录的 cards.yml 供数，
+  // 路由缺席（preset 未装 / 文件缺失）时回退到内置六卡。
+  let cardsProbe: Promise<readonly SituationCard[]> | undefined
+  const probeCards = (): Promise<readonly SituationCard[]> => {
+    cardsProbe ??= fetch('/tizhi-agent-ui/cards')
+      .then(response => (response.ok ? response.json() : { cards: [] }))
+      .then((data: { cards?: unknown }) => {
+        const rows = Array.isArray(data.cards) ? data.cards.filter(isSituationCard) : []
+        return rows.length > 0 ? rows : SITUATION_CARDS
+      })
+      .catch(() => SITUATION_CARDS)
+    return cardsProbe
+  }
+
   const launch = async (
     sessionId: string,
     inputActions: InputActionsLike,
@@ -86,7 +107,7 @@ export function apply(ctx: TizhiCtx): void {
     name: 'conversation.input.dock',
     id: 'tizhi-brand-panel',
     order: -10,
-    inject: () => ({ probePreset, launch }),
+    inject: () => ({ probePreset, probeCards, launch }),
   }, BrandPanel))
 
   ctx.slots.inject('settings.general.item', () => ctx.slots.register({

@@ -3,12 +3,14 @@
  * 只在空白会话渲染；点卡片 = 切「体制模式」preset + 预填开场模板（不自动发送）。
  */
 import * as React from 'react'
-import { PRESET_ID, SITUATION_CARDS } from './cards.ts'
+import { PRESET_ID, SITUATION_CARDS, type SituationCard } from './cards.ts'
 import type { InputActionsLike, SessionListState } from './types.ts'
 
 interface PanelInjected {
   /** roster 中「体制模式」是否可用（缓存的一次性探测）。 */
   probePreset(): Promise<boolean>
+  /** preset 目录 cards.yml 的卡片（缺席时回退内置六卡）。 */
+  probeCards(): Promise<readonly SituationCard[]>
   /** 切 preset 并预填草稿。 */
   launch(sessionId: string, inputActions: InputActionsLike, template: string): Promise<void>
 }
@@ -24,12 +26,14 @@ export function BrandPanel(props: PanelProps): React.ReactNode {
   const blank = props.useSessions(state => state.byId[props.sessionId]?.blank === true)
   const preset = props.useSessions(state => state.byId[props.sessionId]?.agentPreset)
   const [ready, setReady] = React.useState<boolean | undefined>(undefined)
+  const [cards, setCards] = React.useState<readonly SituationCard[]>(SITUATION_CARDS)
 
   React.useEffect(() => {
     let live = true
     void props.probePreset().then(value => { if (live) setReady(value) })
+    void props.probeCards().then(rows => { if (live) setCards(rows) })
     return () => { live = false }
-    // probePreset 是注册期固定的注入面，身份稳定。
+    // probePreset/probeCards 是注册期固定的注入面，身份稳定。
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -51,7 +55,7 @@ export function BrandPanel(props: PanelProps): React.ReactNode {
       ) : (
         <>
           <div className="tz-panel-grid">
-            {SITUATION_CARDS.map(card => (
+            {cards.map(card => (
               <button
                 key={card.key}
                 type="button"

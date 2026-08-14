@@ -81,6 +81,32 @@ export const PANEL_CSS = `
 }
 .tz-panel-note b { color: var(--dsw-alias-brand-text); font-weight: 600; }
 
+/* ── 品牌替换（仅皮肤开启时，body[data-tizhi-skin] 把关）────────────────
+   选择器锚定 CSS Modules 的稳定 local 名（[hash]_[local]），dsh 升级改版式
+   时可能失效——失效的表现是回到 DeepSeek 原品牌，无害降级。 */
+body[data-tizhi-skin] [class*="_logoRow"] svg { display: none; }
+body[data-tizhi-skin] [class*="_logoRow"] [class*="_brand"]::before {
+  content: "体制 · agent";
+  font-family: "Songti SC", "STSong", SimSun, serif;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  color: var(--dsw-alias-brand-text);
+}
+body[data-tizhi-skin] [class*="_fishHitbox"] { display: none; }
+body[data-tizhi-skin] [class*="_headlineText"] {
+  font-size: 0;
+  letter-spacing: 0;
+}
+body[data-tizhi-skin] [class*="_headlineText"]::before {
+  content: "大院之内，自有章法";
+  font-family: "Songti SC", "STSong", SimSun, serif;
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  color: var(--dsw-alias-brand-text);
+}
+
 .tz-settings-row {
   display: flex;
   align-items: center;

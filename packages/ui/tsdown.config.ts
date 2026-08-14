@@ -34,6 +34,8 @@ export default defineConfig([
     fixedExtension: false,
     dts: false,
     clean: false,
+    // yaml 打进产物，运行时零依赖（profile 安装无需装任何 deps）。
+    noExternal: (id: string) => (id === 'yaml' ? true : undefined),
   },
   {
     name: `${ID}/client`,

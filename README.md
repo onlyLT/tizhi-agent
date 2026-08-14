@@ -71,6 +71,17 @@ npx -y @deepseek-ai/dsh@latest plugin --profile web add ./tizhi-agent-ui-0.1.0.t
 
 > 插件集合的变更需要重启 `dsh web` 才生效（preset 不用，插件要）。卸载：`dsh plugin --profile web remove tizhi-agent-ui`。
 
+**自定义情境卡片**：卡片定义在 preset 目录的 `cards.yml`（`~/.dsh/.agent-presets/tizhi/cards.yml`）——每张卡四个字段（`key`/`title`/`hint`/`template`），增删改保存后**刷新浏览器即生效**，无需重新构建插件。文件缺失时面板回退到内置六卡。示例：
+
+```yaml
+- key: dinner
+  title: 应酬饭局
+  hint: 敬酒 · 挡酒 · 座次
+  template: 有个饭局：……，帮我看看怎么应对得体又不吃亏。
+```
+
+**品牌替换**：开启皮肤后，侧栏 logo 与首屏标语一并换成体制.agent 门脸（「大院之内，自有章法」）。替换锚定 dsh 当前版式的稳定类名，dsh 大版本升级后若失效会无害地回到原品牌。
+
 <br>
 
 ## 🧪 装好了怎么验
