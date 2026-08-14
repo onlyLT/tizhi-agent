@@ -56,6 +56,21 @@ mkdir -p ~/.dsh/.agent-presets && cp -r tizhi-agent/preset ~/.dsh/.agent-presets
 
 无需重启：dsh 的 preset 发现是即时的。回到 Web UI 新建会话，预设列表里就有「体制模式」。
 
+### 再装 UI 插件（可选，推荐）
+
+`tizhi-agent-ui` 给 Web UI 加两样东西：**情境入口面板**（空白会话上方六张处境卡，点一下切「体制模式」并预填开场）和**机关大院皮肤**（藏蓝 · 米白纸感 · 朱红点缀，Settings → General 里开关）。
+
+```bash
+# 在仓库目录构建并打包
+cd tizhi-agent/packages/ui
+pnpm install && pnpm build && pnpm pack
+
+# 装进 web profile，然后重启 dsh web
+npx -y @deepseek-ai/dsh@latest plugin --profile web add ./tizhi-agent-ui-0.1.0.tgz
+```
+
+> 插件集合的变更需要重启 `dsh web` 才生效（preset 不用，插件要）。卸载：`dsh plugin --profile web remove tizhi-agent-ui`。
+
 <br>
 
 ## 🧪 装好了怎么验
@@ -87,7 +102,7 @@ preset/
 ## 🗺️ 路线图
 
 - [x] 一期：「体制模式」preset + 体制.skill 首发
-- [ ] 二期：品牌 Web UI 插件（六类处境一键开聊、品牌视觉）
+- [x] 二期：品牌 Web UI 插件 `tizhi-agent-ui`（情境入口面板 + 机关大院皮肤）
 - [ ] 三期：政务技能生态——公文写作、预算评审等技能包按统一调性守则入驻
 
 <br>
