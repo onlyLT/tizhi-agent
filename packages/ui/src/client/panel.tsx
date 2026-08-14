@@ -4,7 +4,7 @@
  */
 import * as React from 'react'
 import { PRESET_ID, SITUATION_CARDS, type SituationCard } from './cards.ts'
-import type { InputActionsLike, SessionListState } from './types.ts'
+import type { InputActionsLike, SessionListState, SnapshotStore } from './types.ts'
 
 interface PanelInjected {
   /** roster 中「体制模式」是否可用（缓存的一次性探测）。 */
@@ -13,6 +13,8 @@ interface PanelInjected {
   probeCards(): Promise<readonly SituationCard[]>
   /** 切 preset 并预填草稿。 */
   launch(sessionId: string, inputActions: InputActionsLike, template: string): Promise<void>
+  /** 皮肤总闸：面板随皮肤同开同关。 */
+  skin: SnapshotStore<{ enabled: boolean }>
 }
 
 interface PanelProps extends PanelInjected {
@@ -23,6 +25,10 @@ interface PanelProps extends PanelInjected {
 
 /** 面板组件（默认导出给 slots.register）。 */
 export function BrandPanel(props: PanelProps): React.ReactNode {
+  const skinOn = React.useSyncExternalStore(
+    props.skin.subscribe,
+    () => props.skin.getSnapshot().enabled,
+  )
   const blank = props.useSessions(state => state.byId[props.sessionId]?.blank === true)
   const preset = props.useSessions(state => state.byId[props.sessionId]?.agentPreset)
   const [ready, setReady] = React.useState<boolean | undefined>(undefined)
@@ -37,7 +43,7 @@ export function BrandPanel(props: PanelProps): React.ReactNode {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  if (!blank) return null
+  if (!skinOn || !blank) return null
 
   const armed = preset === PRESET_ID
 

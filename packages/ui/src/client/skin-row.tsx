@@ -18,8 +18,8 @@ export function SkinRow(props: SkinRowInjected): React.ReactNode {
   return (
     <div className="tz-settings-row">
       <div className="tz-settings-meta">
-        <span className="tz-settings-label">机关大院皮肤</span>
-        <span className="tz-settings-desc">藏蓝 · 米白纸感 · 朱红点缀，明暗模式各有一套（体制.agent）</span>
+        <span className="tz-settings-label">体制.agent 模式</span>
+        <span className="tz-settings-desc">机关大院皮肤（藏蓝 · 米白 · 朱红）+ 品牌门脸 + 情境入口面板，一键同开同关</span>
       </div>
       <button
         type="button"

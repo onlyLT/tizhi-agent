@@ -107,7 +107,7 @@ export function apply(ctx: TizhiCtx): void {
     name: 'conversation.input.dock',
     id: 'tizhi-brand-panel',
     order: -10,
-    inject: () => ({ probePreset, probeCards, launch }),
+    inject: () => ({ probePreset, probeCards, launch, skin: skinStore }),
   }, BrandPanel))
 
   ctx.slots.inject('settings.general.item', () => ctx.slots.register({
