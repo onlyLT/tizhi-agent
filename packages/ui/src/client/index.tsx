@@ -64,15 +64,30 @@ export function apply(ctx: TizhiCtx): void {
       if (!list.result.ok) return
       const rows = list.result.value.presets
       const currentDefault = rows.find(row => row.isDefault === true)?.id
+      // 默认预设只影响「此后新建」的会话；正在展示的空白会话是之前建的，
+      // 徽章不会自己变——这里把它也一并切过去（非空白会话不动，切换被锁）。
+      const retargetBlankCurrent = async (target: string): Promise<void> => {
+        const sessions = ctx.sessions.list.getSnapshot()
+        const id = sessions.current
+        if (id === undefined) return
+        const row = sessions.byId[id]
+        if (row === undefined || !row.blank || row.agentPreset === target) return
+        const response = await api.agentPresets.select({ sessionId: id, agentPreset: target })
+        if (response.result.ok) ctx.sessions.noteAgentPreset(id, response.result.value.agentPreset)
+      }
       if (enabled) {
         const usable = rows.some(row => row.id === PRESET_ID && row.broken === undefined)
-        if (!usable || currentDefault === PRESET_ID) return
-        skinStore.update(draft => { draft.prevDefault = currentDefault })
-        await api.settings.update({ ns: 'agent-presets', patch: { default: PRESET_ID } })
+        if (!usable) return
+        if (currentDefault !== PRESET_ID) {
+          skinStore.update(draft => { draft.prevDefault = currentDefault })
+          await api.settings.update({ ns: 'agent-presets', patch: { default: PRESET_ID } })
+        }
+        await retargetBlankCurrent(PRESET_ID)
       } else if (prevDefault !== undefined) {
         if (currentDefault === PRESET_ID) {
           await api.settings.update({ ns: 'agent-presets', patch: { default: prevDefault } })
         }
+        await retargetBlankCurrent(prevDefault)
         skinStore.update(draft => { draft.prevDefault = undefined })
       }
     }).catch(error => {
