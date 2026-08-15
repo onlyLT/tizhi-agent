@@ -1,6 +1,6 @@
 {
   "name": "tizhi-agent-ui",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "type": "module",
   "description": "体制.agent 的 DeepSeek Harness Web UI 插件：情境入口面板 + 机关大院皮肤",
   "license": "MIT",

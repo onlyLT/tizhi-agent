@@ -20,6 +20,10 @@ export interface ActionDef {
 export interface ModuleDef {
   key: string
   title: string
+  /** 卡片头的单字印记（朱砂小方章）。 */
+  icon: string
+  /** 卡片头的小字注解。 */
+  hint: string
   statuses: readonly string[]
   fields: readonly FieldDef[]
   actions: readonly ActionDef[]
@@ -43,6 +47,8 @@ export const WORKBENCH_MODULES: readonly ModuleDef[] = [
   {
     key: 'meeting',
     title: '会议安排',
+    icon: '会',
+    hint: '通知 · 议程 · 纪要',
     statuses: ['待开', '已开'],
     fields: [
       { key: 'topic', label: '议题', placeholder: '如：二季度安全生产工作部署' },
@@ -67,6 +73,8 @@ export const WORKBENCH_MODULES: readonly ModuleDef[] = [
   {
     key: 'weekly',
     title: '每周总结',
+    icon: '周',
+    hint: '素材随手记 · 周五一键成稿',
     statuses: ['积累中', '已成稿'],
     fields: [
       { key: 'week', label: '周次', placeholder: '如：8月第2周' },
@@ -83,6 +91,8 @@ export const WORKBENCH_MODULES: readonly ModuleDef[] = [
   {
     key: 'study',
     title: '思想学习',
+    icon: '学',
+    hint: '心得 · 体会 · 结合实际',
     statuses: ['待学', '已学', '已写心得'],
     fields: [
       { key: 'topic', label: '主题', placeholder: '如：全会精神专题学习' },
@@ -100,6 +110,8 @@ export const WORKBENCH_MODULES: readonly ModuleDef[] = [
   {
     key: 'report',
     title: '汇报材料',
+    icon: '报',
+    hint: '提纲 · 口径 · 数据',
     statuses: ['准备中', '已汇报'],
     fields: [
       { key: 'matter', label: '事项', placeholder: '如：重点项目推进情况' },
@@ -118,6 +130,8 @@ export const WORKBENCH_MODULES: readonly ModuleDef[] = [
   {
     key: 'gongwen',
     title: '公文起草',
+    icon: '文',
+    hint: '通知 · 请示 · 报告',
     statuses: ['草拟中', '已定稿'],
     fields: [
       { key: 'type', label: '文种', placeholder: '如：请示 / 通知 / 报告 / 函' },

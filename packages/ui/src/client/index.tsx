@@ -165,11 +165,34 @@ export function apply(ctx: TizhiCtx): void {
 
   // ── 政务工作台：root 作用域的启动链路 ────────────────────────────────
   // 当前是空白会话就直接用；不是就 startSession() 开新的，落地后再应用。
-  const workbenchStore = createSnapshotStore({ open: false })
+  // 体制模式下默认展开；用户收起/展开的选择持久化。
+  const workbenchStore = createSnapshotStore(
+    { open: true },
+    { persist: { name: 'tizhi-agent-ui.workbench-open' } },
+  )
   const workbenchData = createSnapshotStore<WorkbenchData>(
     { entries: [] },
     { persist: { name: 'tizhi-agent-ui.workbench-data' } },
   )
+  // body[data-tizhi-wb] 是排版占位的总闸（CSS 给 #root 预留右侧空间）。
+  const reconcileWorkbenchAttr = (): void => {
+    const docked = skinStore.getSnapshot().enabled && workbenchStore.getSnapshot().open
+    if (docked) {
+      document.body.dataset.tizhiWb = ''
+    } else {
+      delete document.body.dataset.tizhiWb
+    }
+  }
+  ctx.effect(() => {
+    const stopSkin = skinStore.subscribe(reconcileWorkbenchAttr)
+    const stopWb = workbenchStore.subscribe(reconcileWorkbenchAttr)
+    reconcileWorkbenchAttr()
+    return () => {
+      stopSkin()
+      stopWb()
+      delete document.body.dataset.tizhiWb
+    }
+  }, 'tizhi-agent-ui: workbench dock attr')
   const applyTemplate = async (sessionId: string, template: string): Promise<void> => {
     const row = ctx.sessions.list.getSnapshot().byId[sessionId]
     if (row !== undefined && row.agentPreset !== PRESET_ID) {
