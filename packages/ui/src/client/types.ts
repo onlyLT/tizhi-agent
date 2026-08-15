@@ -35,12 +35,18 @@ export interface PresetEntry {
   id: string
   name?: string
   broken?: string
+  isDefault?: boolean
 }
 
 /** ConnectionHandle.api 中本插件使用的域。 */
 export interface AgentPresetsApi {
   list(payload: Record<string, never>): Promise<RpcResponseLike<{ presets: readonly PresetEntry[] }>>
   select(payload: { sessionId: string; agentPreset: string }): Promise<RpcResponseLike<{ agentPreset: string }>>
+}
+
+/** 设置域：默认预设写在 agent-presets 命名空间的 default 字段。 */
+export interface SettingsApi {
+  update(payload: { ns: string; patch: Record<string, unknown> }): Promise<RpcResponseLike<unknown>>
 }
 
 /** 会话作用域 slot 标准 props 中的输入动作面。 */
@@ -52,7 +58,7 @@ export interface InputActionsLike {
 /** 本插件注入的 cordis 服务面（结构子集）。 */
 export interface TizhiCtx {
   effect(callback: () => () => void, label?: string): void
-  get(name: 'connection'): { api: { agentPresets: AgentPresetsApi } } | undefined
+  get(name: 'connection'): { api: { agentPresets: AgentPresetsApi; settings: SettingsApi } } | undefined
   slots: {
     register(options: object, component: unknown): () => void
     inject(key: string, callback: () => () => void): () => void

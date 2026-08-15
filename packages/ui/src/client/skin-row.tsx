@@ -19,7 +19,7 @@ export function SkinRow(props: SkinRowInjected): React.ReactNode {
     <div className="tz-settings-row">
       <div className="tz-settings-meta">
         <span className="tz-settings-label">体制.agent 模式</span>
-        <span className="tz-settings-desc">机关大院皮肤（藏蓝 · 米白 · 朱红）+ 品牌门脸 + 情境入口面板，一键同开同关</span>
+        <span className="tz-settings-desc">皮肤 + 品牌门脸 + 情境面板一键同开同关；开启期间新会话默认「体制模式」，关闭恢复原默认</span>
       </div>
       <button
         type="button"

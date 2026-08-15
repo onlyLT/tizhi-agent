@@ -29,7 +29,8 @@ export function apply(ctx: TizhiCtx): void {
   }, 'tizhi-agent-ui: panel styles')
 
   // ── 皮肤 ──────────────────────────────────────────────────────────────
-  const skinStore = createSnapshotStore(
+  // prevDefault 记录开启时被替换掉的默认预设，供关闭时恢复。
+  const skinStore = createSnapshotStore<{ enabled: boolean; prevDefault?: string }>(
     { enabled: false },
     { persist: { name: 'tizhi-agent-ui.skin' } },
   )
@@ -49,9 +50,50 @@ export function apply(ctx: TizhiCtx): void {
       disposeSkin = undefined
     }
   }
+  // 默认预设跟随开关：开 → 记住原默认并切「体制模式」；关 → 若默认仍是
+  // 「体制模式」则恢复原默认（期间用户手动改过默认就不打扰）。串行队列
+  // 防止快速拨动开关时的读写交错。
+  let presetQueue: Promise<void> = Promise.resolve()
+  const reconcileDefaultPreset = (): void => {
+    presetQueue = presetQueue.then(async () => {
+      const connection = ctx.get('connection')
+      if (connection === undefined) return
+      const { api } = connection
+      const { enabled, prevDefault } = skinStore.getSnapshot()
+      const list = await api.agentPresets.list({})
+      if (!list.result.ok) return
+      const rows = list.result.value.presets
+      const currentDefault = rows.find(row => row.isDefault === true)?.id
+      if (enabled) {
+        const usable = rows.some(row => row.id === PRESET_ID && row.broken === undefined)
+        if (!usable || currentDefault === PRESET_ID) return
+        skinStore.update(draft => { draft.prevDefault = currentDefault })
+        await api.settings.update({ ns: 'agent-presets', patch: { default: PRESET_ID } })
+      } else if (prevDefault !== undefined) {
+        if (currentDefault === PRESET_ID) {
+          await api.settings.update({ ns: 'agent-presets', patch: { default: prevDefault } })
+        }
+        skinStore.update(draft => { draft.prevDefault = undefined })
+      }
+    }).catch(error => {
+      // 诊断日志：默认预设调和失败不致命（下次开关或刷新会重试），但必须可见。
+      console.error('[tizhi-agent-ui] default-preset reconcile failed:', error)
+    })
+  }
+
+  let lastEnabled = skinStore.getSnapshot().enabled
   ctx.effect(() => {
-    const stop = skinStore.subscribe(reconcileSkin)
+    const stop = skinStore.subscribe(() => {
+      reconcileSkin()
+      const { enabled } = skinStore.getSnapshot()
+      if (enabled !== lastEnabled) {
+        lastEnabled = enabled
+        reconcileDefaultPreset()
+      }
+    })
     reconcileSkin()
+    // 首帧调和一次：处理「上次开着但默认预设被外力改走」或反向的漂移。
+    reconcileDefaultPreset()
     return () => {
       stop()
       delete document.body.dataset.tizhiSkin
