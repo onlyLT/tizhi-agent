@@ -6,9 +6,10 @@
  * 4. settings.general.item 注册皮肤开关行。
  */
 import { createSnapshotStore } from '@deepseek-ai/dsh-client-runtime/client'
-import { PRESET_ID, SITUATION_CARDS, isSituationCard, type SituationCard } from './cards.ts'
+import { PRESET_ID, SITUATION_CARDS, WORK_MODULES, isSituationCard, type SituationCard } from './cards.ts'
 import { BrandPanel } from './panel.tsx'
 import { SkinRow } from './skin-row.tsx'
+import { WorkbenchButton, WorkbenchPanel } from './workbench.tsx'
 import { SKIN_SOURCE, SKIN_TOKENS } from './skin.ts'
 import { PANEL_CSS } from './styles.ts'
 import type { InputActionsLike, TizhiCtx } from './types.ts'
@@ -133,19 +134,23 @@ export function apply(ctx: TizhiCtx): void {
     return probe
   }
 
-  // 卡片跟着 preset 走：node 半边从 preset 目录的 cards.yml 供数，
-  // 路由缺席（preset 未装 / 文件缺失）时回退到内置六卡。
-  let cardsProbe: Promise<readonly SituationCard[]> | undefined
-  const probeCards = (): Promise<readonly SituationCard[]> => {
-    cardsProbe ??= fetch('/tizhi-agent-ui/cards')
-      .then(response => (response.ok ? response.json() : { cards: [] }))
-      .then((data: { cards?: unknown }) => {
-        const rows = Array.isArray(data.cards) ? data.cards.filter(isSituationCard) : []
-        return rows.length > 0 ? rows : SITUATION_CARDS
-      })
-      .catch(() => SITUATION_CARDS)
-    return cardsProbe
+  // 卡片/模块跟着 preset 走：node 半边从 preset 目录的 YAML 供数，
+  // 路由缺席（preset 未装 / 文件缺失）时回退到内置清单。
+  const yamlProbe = (route: string, fallback: readonly SituationCard[]): () => Promise<readonly SituationCard[]> => {
+    let cached: Promise<readonly SituationCard[]> | undefined
+    return () => {
+      cached ??= fetch(route)
+        .then(response => (response.ok ? response.json() : { cards: [] }))
+        .then((data: { cards?: unknown }) => {
+          const rows = Array.isArray(data.cards) ? data.cards.filter(isSituationCard) : []
+          return rows.length > 0 ? rows : fallback
+        })
+        .catch(() => fallback)
+      return cached
+    }
   }
+  const probeCards = yamlProbe('/tizhi-agent-ui/cards', SITUATION_CARDS)
+  const probeModules = yamlProbe('/tizhi-agent-ui/modules', WORK_MODULES)
 
   const launch = async (
     sessionId: string,
@@ -158,6 +163,44 @@ export function apply(ctx: TizhiCtx): void {
     }
     inputActions.setDraft(template)
   }
+
+  // ── 政务工作台：root 作用域的启动链路 ────────────────────────────────
+  // 当前是空白会话就直接用；不是就 startSession() 开新的，落地后再应用。
+  const workbenchStore = createSnapshotStore({ open: false })
+  const applyTemplate = async (sessionId: string, template: string): Promise<void> => {
+    const row = ctx.sessions.list.getSnapshot().byId[sessionId]
+    if (row !== undefined && row.agentPreset !== PRESET_ID) {
+      const response = await api.agentPresets.select({ sessionId, agentPreset: PRESET_ID })
+      if (response.result.ok) ctx.sessions.noteAgentPreset(sessionId, response.result.value.agentPreset)
+    }
+    const actx = ctx.sessions.scope(sessionId)
+    const conversation = actx?.get('conversation')
+    if (actx !== undefined && conversation !== undefined) {
+      conversation.input.for(actx).setDraft(template)
+    }
+  }
+  let pendingTemplate: string | undefined
+  const launchFromRoot = (template: string): void => {
+    const snapshot = ctx.sessions.list.getSnapshot()
+    const current = snapshot.current !== undefined ? snapshot.byId[snapshot.current] : undefined
+    if (current !== undefined && current.blank) {
+      void applyTemplate(current.id, template).catch(() => {})
+      return
+    }
+    pendingTemplate = template
+    ctx.workspaces.startSession()
+  }
+  ctx.effect(() => ctx.sessions.list.subscribe(() => {
+    if (pendingTemplate === undefined) return
+    const snapshot = ctx.sessions.list.getSnapshot()
+    const id = snapshot.current
+    if (id === undefined) return
+    const row = snapshot.byId[id]
+    if (row === undefined || !row.blank) return
+    const template = pendingTemplate
+    pendingTemplate = undefined
+    void applyTemplate(id, template).catch(() => {})
+  }), 'tizhi-agent-ui: pending workbench launch')
 
   // ── slot 注册 ─────────────────────────────────────────────────────────
   ctx.slots.inject('conversation.input.dock', () => ctx.slots.register({
@@ -173,4 +216,17 @@ export function apply(ctx: TizhiCtx): void {
     order: 60,
     inject: () => ({ skin: skinStore }),
   }, SkinRow))
+
+  ctx.slots.inject('sidebar.footer.action', () => ctx.slots.register({
+    name: 'sidebar.footer.action',
+    id: 'tizhi-workbench',
+    order: -5,
+    inject: () => ({ skin: skinStore, workbench: workbenchStore }),
+  }, WorkbenchButton))
+
+  ctx.slots.inject('shell.overlay', () => ctx.slots.register({
+    name: 'shell.overlay',
+    id: 'tizhi-workbench-panel',
+    inject: () => ({ skin: skinStore, workbench: workbenchStore, probeModules, launch: launchFromRoot }),
+  }, WorkbenchPanel))
 }

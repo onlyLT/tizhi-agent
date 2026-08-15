@@ -21,7 +21,11 @@ interface CardRow {
 }
 
 const PRESET_ID = 'tizhi'
-const CARDS_ROUTE = '/tizhi-agent-ui/cards'
+/** 路由 → preset 目录内的 YAML 文件（同为 CardRow 列表）。 */
+const YAML_ROUTES: Record<string, string> = {
+  '/tizhi-agent-ui/cards': 'cards.yml',
+  '/tizhi-agent-ui/modules': 'modules.yml',
+}
 
 function isCardRow(row: unknown): row is CardRow {
   if (typeof row !== 'object' || row === null) return false
@@ -47,25 +51,27 @@ interface HostCtx {
 
 /** Loader 挂载入口。 */
 export function apply(ctx: HostCtx): void {
-  ctx.effect(() => ctx.webServer.register({
-    kind: 'exact',
-    path: CARDS_ROUTE,
-    handler: async (_req, res) => {
-      try {
-        const preset = await ctx.agentPresets.resolve(PRESET_ID)
-        const text = await readFile(join(dirname(preset.path), 'cards.yml'), 'utf8')
-        const rows: unknown = parse(text)
-        const cards = Array.isArray(rows) ? rows.filter(isCardRow) : []
-        if (cards.length === 0) throw new Error('cards.yml carries no valid card rows')
-        res.writeHead(200, {
-          'content-type': 'application/json; charset=utf-8',
-          'cache-control': 'no-store',
-        })
-        res.end(JSON.stringify({ cards }))
-      } catch {
-        res.writeHead(404, { 'content-type': 'application/json; charset=utf-8' })
-        res.end('{"cards":[]}')
-      }
-    },
-  }), 'tizhi-agent-ui: cards route')
+  for (const [route, file] of Object.entries(YAML_ROUTES)) {
+    ctx.effect(() => ctx.webServer.register({
+      kind: 'exact',
+      path: route,
+      handler: async (_req, res) => {
+        try {
+          const preset = await ctx.agentPresets.resolve(PRESET_ID)
+          const text = await readFile(join(dirname(preset.path), file), 'utf8')
+          const rows: unknown = parse(text)
+          const cards = Array.isArray(rows) ? rows.filter(isCardRow) : []
+          if (cards.length === 0) throw new Error(`${file} carries no valid card rows`)
+          res.writeHead(200, {
+            'content-type': 'application/json; charset=utf-8',
+            'cache-control': 'no-store',
+          })
+          res.end(JSON.stringify({ cards }))
+        } catch {
+          res.writeHead(404, { 'content-type': 'application/json; charset=utf-8' })
+          res.end('{"cards":[]}')
+        }
+      },
+    }), `tizhi-agent-ui: ${file} route`)
+  }
 }

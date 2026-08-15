@@ -45,6 +45,40 @@ export const SITUATION_CARDS: readonly SituationCard[] = [
   },
 ]
 
+/** 政务工作台模块（modules.yml 缺席时的内置回退）。 */
+export const WORK_MODULES: readonly SituationCard[] = [
+  {
+    key: 'meeting',
+    title: '会议安排',
+    hint: '通知 · 议程 · 纪要',
+    template: '帮我安排一个会议：主题「……」，参会范围……，时间……。先出会议通知和议程，开完我再找你整理纪要。',
+  },
+  {
+    key: 'weekly',
+    title: '每周总结',
+    hint: '亮点 · 数据 · 下周',
+    template: '帮我写本周工作总结：本周主要做了……。按亮点、数据、问题、下周打算来组织。',
+  },
+  {
+    key: 'study',
+    title: '思想学习',
+    hint: '心得 · 体会 · 结合实际',
+    template: '帮我整理一篇学习心得：学习主题是「……」，要求结合本职工作谈体会，不空喊口号。',
+  },
+  {
+    key: 'report',
+    title: '汇报材料',
+    hint: '提纲 · 口径 · 数据',
+    template: '要向领导汇报「……」，帮我先拉一个汇报提纲，把口径和重点捋清楚。',
+  },
+  {
+    key: 'gongwen',
+    title: '公文起草',
+    hint: '通知 · 请示 · 报告',
+    template: '帮我起草一份公文：文种是……，事由是……。先出大纲我确认再展开。',
+  },
+]
+
 /** 「体制模式」preset 的 roster id（目录名）。 */
 export const PRESET_ID = 'tizhi'
 

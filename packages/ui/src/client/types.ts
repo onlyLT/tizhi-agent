@@ -55,6 +55,13 @@ export interface InputActionsLike {
   submit(): void
 }
 
+/** 会话作用域上下文（sessions.scope 返回）中本插件触碰的成员。 */
+export interface AgentScopeLike {
+  get(name: 'conversation'): {
+    input: { for(actx: AgentScopeLike): { setDraft(text: string): void } }
+  } | undefined
+}
+
 /** 本插件注入的 cordis 服务面（结构子集）。 */
 export interface TizhiCtx {
   effect(callback: () => () => void, label?: string): void
@@ -69,6 +76,7 @@ export interface TizhiCtx {
   sessions: {
     list: { getSnapshot(): SessionListState; subscribe(fn: () => void): () => void }
     noteAgentPreset(sessionId: string, agentPreset: string): void
+    scope(id: string): AgentScopeLike | undefined
   }
   workspaces: { startSession(workspaceId?: string): void }
 }
