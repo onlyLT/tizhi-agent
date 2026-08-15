@@ -84,16 +84,42 @@ export const PANEL_CSS = `
 /* ── 品牌替换（仅皮肤开启时，body[data-tizhi-skin] 把关）────────────────
    选择器锚定 CSS Modules 的稳定 local 名（[hash]_[local]），dsh 升级改版式
    时可能失效——失效的表现是回到 DeepSeek 原品牌，无害降级。 */
-body[data-tizhi-skin] [class*="_logoRow"] svg { display: none; }
-body[data-tizhi-skin] [class*="_logoRow"] [class*="_brand"]::before {
+/* 侧栏 wordmark 魔改：只留鲸鱼（第 10 条 path，viewBox 左端 0–23px），
+   染朱砂红；负右边距吞掉字标留下的空白，后接宋体「体制 · agent」。 */
+body[data-tizhi-skin] [class*="_logoRow"] [class*="_brand"] {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+body[data-tizhi-skin] [class*="_logoRow"] svg {
+  display: block;
+  flex: none;
+  margin-right: -155px;
+  color: #b03a2e;
+}
+/* wordmark 结构：9 条字母 path + g(鲸鱼) + rect(徽章底) + g(徽章字) + defs。
+   全部隐藏后只放出第一个 g —— 鲸鱼。 */
+body[data-tizhi-skin] [class*="_logoRow"] svg > * { display: none; }
+body[data-tizhi-skin] [class*="_logoRow"] svg > g:first-of-type { display: inline; }
+body[data-tizhi-skin] [class*="_logoRow"] [class*="_brand"]::after {
   content: "体制 · agent";
   font-family: "Songti SC", "STSong", SimSun, serif;
   font-size: 17px;
   font-weight: 700;
   letter-spacing: .14em;
   color: var(--dsw-alias-brand-text);
+  white-space: nowrap;
 }
-body[data-tizhi-skin] [class*="_fishHitbox"] { display: none; }
+/* 首屏鲸鱼：不再隐藏，朱砂红 + 盖章式微倾。 */
+body[data-tizhi-skin] [class*="_fish"] {
+  color: #b03a2e;
+  transform: rotate(-4deg);
+}
+/* 深色（深夜大院）下朱砂上提一档保持可读。 */
+body[data-tizhi-skin][data-ds-dark-theme] [class*="_logoRow"] svg,
+body[data-tizhi-skin][data-ds-dark-theme] [class*="_fish"] {
+  color: #d0685a;
+}
 body[data-tizhi-skin] [class*="_headlineText"] {
   font-size: 0;
   letter-spacing: 0;
