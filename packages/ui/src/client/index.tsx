@@ -6,10 +6,10 @@
  * 4. settings.general.item 注册皮肤开关行。
  */
 import { createSnapshotStore } from '@deepseek-ai/dsh-client-runtime/client'
-import { PRESET_ID, SITUATION_CARDS, WORK_MODULES, isSituationCard, type SituationCard } from './cards.ts'
+import { PRESET_ID, SITUATION_CARDS, isSituationCard, type SituationCard } from './cards.ts'
 import { BrandPanel } from './panel.tsx'
 import { SkinRow } from './skin-row.tsx'
-import { WorkbenchButton, WorkbenchPanel } from './workbench.tsx'
+import { WorkbenchButton, WorkbenchDrawer, type WorkbenchData } from './workbench.tsx'
 import { SKIN_SOURCE, SKIN_TOKENS } from './skin.ts'
 import { PANEL_CSS } from './styles.ts'
 import type { InputActionsLike, TizhiCtx } from './types.ts'
@@ -150,7 +150,6 @@ export function apply(ctx: TizhiCtx): void {
     }
   }
   const probeCards = yamlProbe('/tizhi-agent-ui/cards', SITUATION_CARDS)
-  const probeModules = yamlProbe('/tizhi-agent-ui/modules', WORK_MODULES)
 
   const launch = async (
     sessionId: string,
@@ -167,6 +166,10 @@ export function apply(ctx: TizhiCtx): void {
   // ── 政务工作台：root 作用域的启动链路 ────────────────────────────────
   // 当前是空白会话就直接用；不是就 startSession() 开新的，落地后再应用。
   const workbenchStore = createSnapshotStore({ open: false })
+  const workbenchData = createSnapshotStore<WorkbenchData>(
+    { entries: [] },
+    { persist: { name: 'tizhi-agent-ui.workbench-data' } },
+  )
   const applyTemplate = async (sessionId: string, template: string): Promise<void> => {
     const row = ctx.sessions.list.getSnapshot().byId[sessionId]
     if (row !== undefined && row.agentPreset !== PRESET_ID) {
@@ -227,6 +230,6 @@ export function apply(ctx: TizhiCtx): void {
   ctx.slots.inject('shell.overlay', () => ctx.slots.register({
     name: 'shell.overlay',
     id: 'tizhi-workbench-panel',
-    inject: () => ({ skin: skinStore, workbench: workbenchStore, probeModules, launch: launchFromRoot }),
-  }, WorkbenchPanel))
+    inject: () => ({ skin: skinStore, workbench: workbenchStore, data: workbenchData, launch: launchFromRoot }),
+  }, WorkbenchDrawer))
 }
