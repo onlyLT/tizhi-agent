@@ -24,12 +24,12 @@ export function SkinRow(props: SkinRowInjected): React.ReactNode {
       role="switch"
       aria-checked={enabled}
       aria-label="体制.agent 模式"
+      title="皮肤 + 品牌门脸 + 情境面板一键同开同关；开启期间新会话默认「体制模式」，关闭恢复原默认"
       onClick={() => props.skin.update(draft => { draft.enabled = !enabled })}
     >
       <span className="tz-seal" aria-hidden="true">体制</span>
       <span className="tz-settings-meta">
         <span className="tz-settings-label"><b>体制 · agent</b> 模式</span>
-        <span className="tz-settings-desc">皮肤 + 品牌门脸 + 情境面板一键同开同关；开启期间新会话默认「体制模式」，关闭恢复原默认</span>
       </span>
       <span className="tz-settings-state">
         <span className="tz-settings-state-word">{enabled ? '已开启' : '未开启'}</span>

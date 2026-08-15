@@ -136,10 +136,10 @@ body[data-tizhi-skin] [class*="_headlineText"]::before {
 .tz-settings-card {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   width: 100%;
   text-align: left;
-  padding: 14px 16px;
+  padding: 10px 14px;
   border: 1.5px solid var(--dsw-alias-border-l2);
   border-radius: 10px;
   background: var(--dsw-alias-bg-layer-1);
@@ -157,8 +157,8 @@ body[data-tizhi-skin] [class*="_headlineText"]::before {
 }
 .tz-seal {
   flex: none;
-  width: 40px;
-  height: 40px;
+  width: 34px;
+  height: 34px;
   border-radius: 6px;
   background: #b03a2e;
   color: #fff8ef;
@@ -192,7 +192,11 @@ body[data-tizhi-skin] [class*="_headlineText"]::before {
   color: var(--dsw-alias-brand-text);
   font-weight: 700;
 }
-.tz-settings-desc { font-size: 12px; color: var(--dsw-alias-label-tertiary); }
+.tz-settings-desc {
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--dsw-alias-label-secondary);
+}
 .tz-settings-state {
   flex: none;
   display: flex;
