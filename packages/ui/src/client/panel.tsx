@@ -49,10 +49,6 @@ export function BrandPanel(props: PanelProps): React.ReactNode {
 
   return (
     <div className="tz-panel">
-      <div className="tz-panel-head">
-        <span className="tz-panel-title">大前辈在线</span>
-        <span className="tz-panel-sub">先摸清情况再开口 · 编制恕不附赠</span>
-      </div>
       {ready === false ? (
         <div className="tz-panel-note">
           还没装「体制模式」预设 —— 把 tizhi-agent 仓库的 <b>preset/</b> 拷到{' '}
